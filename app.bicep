@@ -1,58 +1,84 @@
-import radius as radius
+extension radius
+extension radiusCompute
+extension radiusSecurity
+extension radiusData
 
-@description('The Radius Application.')
-resource app 'Applications.Core/applications@2023-10-01-preview' = {
-  name: 'todo-list-app'
+param environment string
+
+@secure()
+param password string
+
+@description('The full container image reference to build and push. Must be lowercase.')
+param image string
+
+resource todoApp 'Applications.Core/applications@2023-10-01-preview' = {
+  name: 'todo-list-app-demo'
   properties: {
     environment: environment
   }
 }
 
-@description('The Radius Environment ID. Injected automatically by Radius.')
-param environment string
-
-resource frontend 'Applications.Core/containers@2023-10-01-preview' = {
-  name: 'frontend'
+resource database 'Radius.Data/mySqlDatabases@2025-08-01-preview' = {
+  name: 'mysql'
   properties: {
-    application: app.id
-    container: {
-      image: 'ghcr.io/nicolejms/todo-list-app-demo:latest'
-      ports: {
-        web: {
-          containerPort: 3000
-        }
+    environment: environment
+    application: todoApp.id
+    database: 'todos'
+    version: '8.0'
+    secretName: dbSecret.name
+  }
+}
+
+resource dbSecret 'Radius.Security/secrets@2025-08-01-preview' = {
+  name: 'dbsecret'
+  properties: {
+    environment: environment
+    application: todoApp.id
+    data: {
+      USERNAME: {
+        value: 'todo_list_app_user'
       }
-      env: {
-        MONGO_URL: {
-          value: 'mongodb://${db.properties.host}:${db.properties.port}/todo'
+      PASSWORD: {
+        value: password
+      }
+    }
+  }
+}
+
+resource demoImage 'Radius.Compute/containerImages@2025-08-01-preview' = {
+  name: 'demo-image'
+  properties: {
+    environment: environment
+    application: todoApp.id
+    image: image
+    build: {
+      context: '/app/demo'
+    }
+  }
+}
+
+resource todoContainer 'Radius.Compute/containers@2025-08-01-preview' = {
+  name: 'todo-list-app-demo-frontend'
+  properties: {
+    environment: environment
+    application: todoApp.id
+    containers: {
+      todo: {
+        image: demoImage.properties.image
+        ports: {
+          web: {
+            containerPort: 3000
+          }
         }
       }
     }
     connections: {
-      mongodb: {
-        source: db.id
+      mysqldb: {
+        source: database.id
+      }
+      demoContainerImage: {
+        source: demoImage.id
       }
     }
-  }
-}
-
-resource db 'Applications.Datastores/mongoDatabases@2023-10-01-preview' = {
-  name: 'mongodb'
-  properties: {
-    application: app.id
-    environment: environment
-  }
-}
-
-resource gateway 'Applications.Core/gateways@2023-10-01-preview' = {
-  name: 'gateway'
-  properties: {
-    application: app.id
-    routes: [
-      {
-        path: '/'
-        destination: 'http://frontend:3000'
-      }
-    ]
   }
 }
