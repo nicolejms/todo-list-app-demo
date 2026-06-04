@@ -54,9 +54,7 @@ jobs:
 
       - name: Deploy Application
         run: |
-          rad deploy "app.bicep" --environment "dev" --parameters password="$DB_PASSWORD" --parameters image="ghcr.io/nicolejms/todo-list-app-demo:latest"
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          rad deploy "app.bicep" --environment "dev"
 
       - name: Show Application Status
         run: |
