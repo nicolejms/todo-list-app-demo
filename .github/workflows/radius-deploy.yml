@@ -40,21 +40,23 @@ jobs:
 
       - name: Install Radius Control Plane
         run: |
-          rad install kubernetes --set rp.publicEndpointOverride=localhost
+          rad install kubernetes --set rp.publicEndpointOverride=localhost || echo "Radius already installed, continuing..."
 
       - name: Setup Radius Environment
         run: |
           rad workspace create kubernetes default
           rad group create default
           rad group switch default
-          rad env create "dev" --namespace "default"
+          rad env create "dev" --namespace "default" || echo "Environment already exists"
           rad env switch "dev"
           rad credential register azure wi --client-id "${{ secrets.AZURE_CLIENT_ID }}" --tenant-id "${{ secrets.AZURE_TENANT_ID }}"
           rad env update "dev" --azure-subscription-id "${{ secrets.AZURE_SUBSCRIPTION_ID }}" --azure-resource-group "${{ vars.AZURE_RESOURCE_GROUP }}"
 
       - name: Deploy Application
         run: |
-          rad deploy "app.bicep" --environment "dev"
+          rad deploy "app.bicep" --environment "dev" --parameters password="$DB_PASSWORD" --parameters image="ghcr.io/nicolejms/todo-list-app-demo:latest"
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
       - name: Show Application Status
         run: |
