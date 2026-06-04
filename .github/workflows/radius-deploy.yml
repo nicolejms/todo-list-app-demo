@@ -33,6 +33,10 @@ jobs:
         run: |
           wget -q "https://raw.githubusercontent.com/radius-project/radius/main/deploy/install.sh" -O - | /bin/bash
 
+      - name: Install Radius Control Plane
+        run: |
+          rad install kubernetes --set rp.publicEndpointOverride=localhost
+
       - name: Setup Radius Environment
         run: |
           rad workspace create kubernetes default
