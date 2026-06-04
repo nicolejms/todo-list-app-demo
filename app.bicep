@@ -1,4 +1,4 @@
-import radius as radius
+extension radius
 
 @description('The Radius environment ID. Injected by Radius.')
 param environment string
@@ -19,20 +19,6 @@ resource frontend 'Applications.Core/containers@2023-10-01-preview' = {
       ports: {
         web: {
           containerPort: 3000
-        }
-      }
-      env: {
-        MYSQL_HOST: {
-          value: db.properties.status.binding.host
-        }
-        MYSQL_USER: {
-          value: db.properties.status.binding.username
-        }
-        MYSQL_PASSWORD: {
-          value: db.properties.status.binding.password
-        }
-        MYSQL_DB: {
-          value: db.properties.status.binding.database
         }
       }
     }
