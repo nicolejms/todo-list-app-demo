@@ -21,6 +21,7 @@ resource frontend 'Applications.Core/containers@2023-10-01-preview' = {
           containerPort: 3000
         }
       }
+      imagePullPolicy: 'Always'
     }
     connections: {
       mysql: {
