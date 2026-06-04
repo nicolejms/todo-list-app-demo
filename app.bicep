@@ -1,15 +1,7 @@
-extension radius
-extension radiusCompute
-extension radiusSecurity
-extension radiusData
+import radius as radius
 
+@description('The Radius environment ID. Injected by Radius.')
 param environment string
-
-@secure()
-param password string
-
-@description('The full container image reference to build and push. Must be lowercase.')
-param image string
 
 resource todoApp 'Applications.Core/applications@2023-10-01-preview' = {
   name: 'todo-list-app-demo'
@@ -18,67 +10,44 @@ resource todoApp 'Applications.Core/applications@2023-10-01-preview' = {
   }
 }
 
-resource database 'Radius.Data/mySqlDatabases@2025-08-01-preview' = {
-  name: 'mysql'
+resource frontend 'Applications.Core/containers@2023-10-01-preview' = {
+  name: 'frontend'
   properties: {
-    environment: environment
     application: todoApp.id
-    database: 'todos'
-    version: '8.0'
-    secretName: dbSecret.name
-  }
-}
-
-resource dbSecret 'Radius.Security/secrets@2025-08-01-preview' = {
-  name: 'dbsecret'
-  properties: {
-    environment: environment
-    application: todoApp.id
-    data: {
-      USERNAME: {
-        value: 'todo_list_app_user'
+    container: {
+      image: 'ghcr.io/nicolejms/todo-list-app-demo:latest'
+      ports: {
+        web: {
+          containerPort: 3000
+        }
       }
-      PASSWORD: {
-        value: password
-      }
-    }
-  }
-}
-
-resource demoImage 'Radius.Compute/containerImages@2025-08-01-preview' = {
-  name: 'demo-image'
-  properties: {
-    environment: environment
-    application: todoApp.id
-    image: image
-    build: {
-      context: '/app/demo'
-    }
-  }
-}
-
-resource todoContainer 'Radius.Compute/containers@2025-08-01-preview' = {
-  name: 'todo-list-app-demo-frontend'
-  properties: {
-    environment: environment
-    application: todoApp.id
-    containers: {
-      todo: {
-        image: demoImage.properties.image
-        ports: {
-          web: {
-            containerPort: 3000
-          }
+      env: {
+        MYSQL_HOST: {
+          value: db.properties.status.binding.host
+        }
+        MYSQL_USER: {
+          value: db.properties.status.binding.username
+        }
+        MYSQL_PASSWORD: {
+          value: db.properties.status.binding.password
+        }
+        MYSQL_DB: {
+          value: db.properties.status.binding.database
         }
       }
     }
     connections: {
-      mysqldb: {
-        source: database.id
-      }
-      demoContainerImage: {
-        source: demoImage.id
+      mysql: {
+        source: db.id
       }
     }
+  }
+}
+
+resource db 'Applications.Datastores/sqlDatabases@2023-10-01-preview' = {
+  name: 'db'
+  properties: {
+    application: todoApp.id
+    environment: environment
   }
 }
