@@ -92,5 +92,5 @@ jobs:
 
       - name: Show Application Status
         run: |
-          rad app status
+          rad app status -a todo-list-app-demo
           rad resource list --output table
