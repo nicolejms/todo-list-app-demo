@@ -87,13 +87,19 @@ jobs:
           rad recipe register default --resource-type Applications.Datastores/sqlDatabases --template-kind bicep --template-path ghcr.io/radius-project/recipes/local-dev/sqldatabases:latest --environment dev || echo "Recipe may already exist"
 
       - name: Deploy Application
+        working-directory: ${{ github.workspace }}
         run: |
-          if [ -f ".radius/app.bicep" ]; then
-            rad deploy ".radius/app.bicep" --environment "dev"
-          elif [ -f "app.bicep" ]; then
-            rad deploy "app.bicep" --environment "dev"
+          echo "Working directory: $(pwd)"
+          echo "Files in workspace:"
+          ls -la *.bicep .radius/*.bicep 2>/dev/null || echo "No bicep files found directly"
+          find . -name "*.bicep" -type f
+          if [ -f "${{ github.workspace }}/app.bicep" ]; then
+            rad deploy "${{ github.workspace }}/app.bicep" --environment "dev"
+          elif [ -f "${{ github.workspace }}/.radius/app.bicep" ]; then
+            rad deploy "${{ github.workspace }}/.radius/app.bicep" --environment "dev"
           else
-            echo "No app.bicep found"; exit 1
+            echo " No app.bicep found in repository"
+            exit 1
           fi
 
       - name: Show Application Status
